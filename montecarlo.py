@@ -9,7 +9,7 @@ from matplotlib.colors import LogNorm
 from tabulate import tabulate
 
 time_0 = time.time()
-seed = time.time()
+seed = time.time()//10
 random.seed(seed)
 
 print(f"Starting Monte Carlo Simulation with Random Seed: {seed}")
@@ -32,15 +32,14 @@ SigT_H2O = SigA_H2O + SigS_H2O
 lambda_H2O = 1/SigT_H2O
 
 # Defining the cell boundaries
-R1 = 4
-R2 = 10
-R3 = 13
+R1 = 3
+R2 = 5
+R3 = 7
 
 nCell1 = 0
 nCell2 = 0
 nCell3 = 0
 nFissions = 0
-
 
 
 
@@ -103,30 +102,15 @@ def Plutonium(particle):
     # Conditional statements checking if the resultant vector is outside the bounds of the original cell
     #   If so, translate the particle to the boundary of the neighboring cell in the direction of the resultant vector, and return to proccess_particle
     if r0 <= R1:
-        if R1 <= r_new < R2:
+        if R1 <= r_new:
             particle.x = (R1 + 0.0001) * np.sin(phi_new)*np.cos(theta_new)
             particle.y = (R1 + 0.0001) * np.sin(phi_new)*np.sin(theta_new)
             particle.z = (R1 + 0.0001) * np.cos(phi_new)
             return
-        elif R2 <= r_new < R3:
-            particle.x = (R2 + 0.0001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R2 + 0.0001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R2 + 0.0001) * np.cos(phi_new)
-            return
-        elif R3 <= r_new:
-            particle.x = (R3 + 0.0001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R3 + 0.0001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R3 + 0.0001) * np.cos(phi_new)
-            return
         
     elif R2 <= r0 <= R3:
-        if r_new < R1:
-            particle.x = (R1 - 0.0001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R1 - 0.0001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R1 - 0.0001) * np.cos(phi_new)
-            return
         
-        elif R1 <= r_new < R2:
+        if r_new <= R2:
             particle.x = (R2 - 0.0001) * np.sin(phi_new)*np.cos(theta_new)
             particle.y = (R2 - 0.0001) * np.sin(phi_new)*np.sin(theta_new)
             particle.z = (R2 - 0.0001) * np.cos(phi_new)
@@ -183,41 +167,25 @@ def Water(particle):
     theta_new = np.arctan((particle.y + dy ) / (particle.x + dx))
     phi_new   = np.arccos((particle.z + dz) / r_new)
 
-    if R1< r0 < R2:
+    if R1 <= r0 <= R2:
         if r_new <= R1:
             particle.x = (R1 - 0.0001) * np.sin(phi_new)*np.cos(theta_new)
             particle.y = (R1 - 0.0001) * np.sin(phi_new)*np.sin(theta_new)
             particle.z = (R1 - 0.0001) * np.cos(phi_new)
             return
-        elif R2 <= r_new < R3:
+        elif R2 <= r_new:
             particle.x = (R2 + 0.0001) * np.sin(phi_new)*np.cos(theta_new)
             particle.y = (R2 + 0.0001) * np.sin(phi_new)*np.sin(theta_new)
             particle.z = (R2 + 0.0001) * np.cos(phi_new)
             return
-        elif R3 <= r_new:
-            particle.x = (R3 + 0.0001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R3 + 0.0001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R3 + 0.0001) * np.cos(phi_new)
-            return
         
-    elif R3 < r0:
-        if r_new < R1:
-            particle.x = (R1 - 0.001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R1 - 0.001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R1 - 0.001) * np.cos(phi_new)
-            return
-        
-        elif R1 <= r_new < R2:
-            particle.x = (R2 - 0.001) * np.sin(phi_new)*np.cos(theta_new)
-            particle.y = (R2 - 0.001) * np.sin(phi_new)*np.sin(theta_new)
-            particle.z = (R2 - 0.001) * np.cos(phi_new)
-            return
-        
-        elif R2 <= r_new < R3:
+    elif R3 <= r0:
+        if r_new <= R3:
             particle.x = (R3 - 0.001) * np.sin(phi_new)*np.cos(theta_new)
             particle.y = (R3 - 0.001) * np.sin(phi_new)*np.sin(theta_new)
             particle.z = (R3 - 0.001) * np.cos(phi_new)
             return
+        
     particle.x += dx
     particle.y += dy
     particle.z += dz
@@ -261,7 +229,7 @@ for i, particle in enumerate(particle_list):
     thread = threading.Thread(target=process_particle, args=(particle,))
     threads.append(thread)
     thread.start()
-    if time.time()- time_0 > 300 or len(particle_list) > 1000000:
+    if time.time()- time_0 > 1000 or len(particle_list) > 1000000:
         print("Time out!")
         break
 
@@ -289,16 +257,17 @@ print(tabulate(table_data, headers='firstrow', tablefmt='fancy_grid'))
 
 
 def plot_capture_3D(particle_list):
+
     # Create a 3D scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.set_facecolor('black')
-
+    ax.set_facecolor('grey')
+    ax.view_init(elev=27, azim=-75) 
     # Get the maximum distance from the origin
     max_distance = max(np.sqrt(p.x ** 2 + p.y ** 2 + p.z ** 2) for p in particle_list)
 
     # Loop through particles and plot them one by one
-    for particle in random.sample(particle_list, 4000):
+    for particle in random.sample(particle_list, len(particle_list)//100):
         distance = np.sqrt(particle.x ** 2 + particle.y ** 2 + particle.z ** 2)
         normalized_distance = distance / max_distance
         color = plt.cm.plasma(normalized_distance)  # Use plasma colormap
@@ -311,7 +280,7 @@ def plot_capture_3D(particle_list):
     ax.set_zlabel('Z')
 
     # Add a colorbar with logarithmic scale
-    sm = plt.cm.ScalarMappable(cmap='plasma', norm=LogNorm(vmin=1, vmax=max_distance))
+    sm = plt.cm.ScalarMappable(cmap='plasma', norm=plt.Normalize(0, max_distance))
     sm.set_array([])
     plt.colorbar(sm, label='Distance from Origin (log scale)')
 
@@ -325,23 +294,26 @@ def plot_capture_3D(particle_list):
     ax.tick_params(axis='y', colors='white')
     ax.tick_params(axis='z', colors='white')
 
+    # Add a title
+    plt.title("Positions of Captured Neutrons (cm from origin)", color='black')
+
     # Show the plot
     plt.show()
 
 def plot_origin_3D(particle_list):
-    # Create a 3D scatter plot
+     # Create a 3D scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.set_facecolor('black')
-
+    ax.set_facecolor('grey')
+    ax.view_init(elev=27, azim=-75) 
     # Get the maximum distance from the origin
-    max_distance = max(np.sqrt(p.originX ** 2 + p.originY ** 2 + p.originZ ** 2) for p in particle_list)
+    max_distance = max(np.sqrt(p.x ** 2 + p.y ** 2 + p.z ** 2) for p in particle_list)
 
     # Loop through particles and plot them one by one
-    for particle in random.sample(particle_list, 4000):
+    for particle in random.sample(particle_list, len(particle_list)//100):
         distance = np.sqrt(particle.originX ** 2 + particle.originY ** 2 + particle.originZ ** 2)
         normalized_distance = distance / R3
-        color = plt.cm.plasma(normalized_distance)  # Use hsv colormap
+        color = plt.cm.plasma(normalized_distance)  # Use plasma colormap
 
         ax.scatter(particle.originX, particle.originY, particle.originZ, c=color, marker='o', s=0.1)
 
@@ -350,11 +322,11 @@ def plot_origin_3D(particle_list):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    # Add a colorbar
-    norm = plt.Normalize(0, R3)
-    sm = plt.cm.ScalarMappable(cmap='plasma', norm=norm)
+    # Add a colorbar with logarithmic scale
+    sm = plt.cm.ScalarMappable(cmap='plasma')
     sm.set_array([])
-    plt.colorbar(sm, label='Distance from Origin')
+    norm = plt.Normalize(0, 9)
+    plt.colorbar(sm, label='Distance from Origin (cm)', norm=norm)
 
     # Set axis labels and ticks color to white
     ax.xaxis.label.set_color('white')
@@ -366,13 +338,16 @@ def plot_origin_3D(particle_list):
     ax.tick_params(axis='y', colors='white')
     ax.tick_params(axis='z', colors='white')
 
+    # Add a title
+    plt.title("Spawn Point for Neutrons (cm from origin)", color='black')
+
     # Show the plot
     plt.show()
 
 def plot_tracks_3D(particle_list):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.set_facecolor('black')
+    ax.set_facecolor('grey')
 
     # Get maximum scatter
     max_nScatters = max(p.nScatters for p in particle_list)
@@ -382,19 +357,22 @@ def plot_tracks_3D(particle_list):
     ax.set_zlim([-50, 50])
 
     # Randomly select 100 particles
-    selected_particles = random.sample(particle_list, 4000)
-
+    selected_particles = random.sample(particle_list, len(particle_list))
     # Loop through selected particles and plot arrows
     for particle in selected_particles:
-        ax.quiver(particle.originX, particle.originY, particle.originZ,
-                  particle.x - particle.originX, particle.y - particle.originY, particle.z - particle.originZ,
-                  color=plt.cm.plasma(particle.nScatters/30), linewidth=0.5, arrow_length_ratio=0.1)
+        if particle.F:
+            ax.quiver(particle.originX, particle.originY, particle.originZ,
+                    particle.x - particle.originX, particle.y - particle.originY, particle.z - particle.originZ,
+                    color=plt.cm.plasma(particle.nScatters/30), linewidth=0.5, arrow_length_ratio=0.1)
+        if particle.F:
+            ax.scatter(particle.originX, particle.originY, particle.originZ, c="red", marker='o', s=0.6)
+
 
     # Adding colorbar
     norm = plt.Normalize(0, 30)
     sm = plt.cm.ScalarMappable(cmap='plasma', norm=norm)
     sm.set_array([])
-    plt.colorbar(sm, label='Number of Scatters')
+    plt.colorbar(sm, label='Number of Times Scattered')
 
     # Set labels for the axes
     ax.set_xlabel('X')
@@ -411,6 +389,8 @@ def plot_tracks_3D(particle_list):
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')
     ax.tick_params(axis='z', colors='white')
+
+    plt.title("Resultant Translation of Neutrons (cm from origin)", color='black')
     # Show the plot
     plt.show()
 
@@ -420,36 +400,41 @@ def plot_capture(particle_list):
     # Extract data for plotting
     x = [particle.x for particle in particle_list]
     y = [particle.y for particle in particle_list]
-    nScatters = [particle.nScatters for particle in particle_list]
+    r = [ np.sqrt(particle.x**2 + particle.y**2) for particle in particle_list]
 
     # Create a scatter plot with color coding by nScatters
-    plt.scatter(x, y, c=nScatters, cmap='plasma', s=0.1)
+    plt.scatter(x, y, c=r, cmap='plasma', s=0.1)
 
     # Adding colorbar
-    plt.colorbar(label='nScatters')
+    plt.colorbar(label='Distance from Origin (cm)')
 
     # Set labels for the axes
     plt.xlabel('X')
     plt.ylabel('Y')
 
+    plt.title("Captured Neutrons Projected onto XY (cm from origin)", color='black')
+
     # Show the plot
     plt.show()
+
 
 def plot_origin(particle_list):
     # Extract data for plotting
     x = [particle.originX for particle in particle_list]
     y = [particle.originY for particle in particle_list]
-    nScatters = [particle.nScatters for particle in particle_list]
+    r = [np.sqrt(particle.originX**2 + particle.originY**2) for particle in particle_list]
 
     # Create a scatter plot with color coding by nScatters
-    plt.scatter(x, y, c=nScatters, cmap='hsv', s=0.1)
+    plt.scatter(x, y, c=r, cmap='plasma', s=0.1)
 
     # Adding colorbar
-    plt.colorbar(label='nScatters')
+    plt.colorbar(label='Distance from Origin (cm)')
 
     # Set labels for the axes
     plt.xlabel('X')
     plt.ylabel('Y')
+
+    plt.title("Spawn Point for Neutrons Projected onto XY (cm from origin)", color='black')
 
     # Show the plot
     plt.show()
@@ -457,25 +442,25 @@ def plot_origin(particle_list):
 
 def plot_tracks(particle_list):
     # Loop through particles and plot arrows
-    for particle in particle_list:
+    for particle in random.sample(particle_list, len(particle_list)//10):
         plt.arrow(particle.originX, particle.originY, particle.x - particle.originX, particle.y - particle.originY,
-                  color=plt.cm.hsv(particle.nScatters/10), head_width=0.75, length_includes_head=True, linewidth=0.5)
+                  color=plt.cm.plasma(particle.nScatters/30), head_width=0.6, length_includes_head=True, linewidth=0.4)
 
     # Adding colorbar
-    sm = plt.cm.ScalarMappable(cmap='hsv', norm=plt.Normalize(vmin=0, vmax=10))
-    sm.set_array([])  # This line is required for the colorbar to work
-    plt.colorbar(sm, label='nScatters', ticks=[0, 2, 4, 6, 8, 10])
-
+    norm = plt.Normalize(0, 30)
+    sm = plt.cm.ScalarMappable(cmap='plasma', norm=norm)
+    sm.set_array([])
+    plt.colorbar(sm, label='Number of Times Scattered')
     # Set labels for the axes
     plt.xlabel('X')
     plt.ylabel('Y')
-
+    plt.title("Resultant Translation of Neutrons, Projected onto XY (cm from origin)", color='black')
     # Show the plot
     plt.show()
 
-# plot_capture(particle_list=particle_list)
-# plot_origin(particle_list=particle_list)
-# plot_tracks(particle_list=particle_list)
-# plot_capture_3D(particle_list=particle_list)
+plot_capture(particle_list=particle_list)
+plot_origin(particle_list=particle_list)
+plot_tracks(particle_list=particle_list)
+plot_capture_3D(particle_list=particle_list)
 plot_origin_3D(particle_list=particle_list)
-# plot_tracks_3D(particle_list=particle_list)
+plot_tracks_3D(particle_list=particle_list)
